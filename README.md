@@ -1,5 +1,5 @@
 # lstm_explore
-"Visual Episodic Memory based Exploration".  A convolutional LSTM autoencoder curiosity method for robot exploration.
+## "Visual Episodic Memory based Exploration".  A convolutional LSTM autoencoder curiosity method for robot exploration.
 
 This work explores the use of visual episodic memory as a 
 source of intrinsic motivation for robotic exploration 
@@ -18,3 +18,6 @@ Curiosity-driven Variational Autoencoder (CVAE) at finding
 dynamic anomalies.
 
 ![image](https://user-images.githubusercontent.com/4203994/195624929-d562f43e-faee-4cef-8f34-11f428c8f094.png)
+
+## Getting Started
+In addition to the requirements.txt, this experiment requires ROS(Kinetic) and Gazebo installation.  This configuration was tested on Ubuntu 20.04 with two Nvidia GPU's and CUDA 11.2.  The ROS_files directory contains the Gazebo map as well as Turtlebot configuration files.  lstmAE.py is the primary convolutional LSTM exploration method with vae.py being the variational autoencoder method for comparison.
