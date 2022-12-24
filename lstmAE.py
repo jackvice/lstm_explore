@@ -26,7 +26,6 @@ from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
 from tensorflow import keras
-#from tensorflow.keras import layers
 from tensorflow.keras.layers import Conv2DTranspose, ConvLSTM2D, BatchNormalization
 from tensorflow.keras.layers import TimeDistributed, Conv2D, LayerNormalization, Conv3D
 from tensorflow.keras.models import Sequential, load_model
@@ -50,18 +49,15 @@ def main(args):
 class inference_obj(object):
     def __init__(self, model, model_inf): #copy weights from model
         self.pub_ssim = rospy.Publisher('ssim', Float32, queue_size=1)
-        #self.pub_latent = rospy.Publisher('latent', numpy_msg(Floats))#, queue_size=65536 )#Float32MultiArray, queue_size=2)
         self.pub_ae_image = rospy.Publisher('ae_image', numpy_msg(Floats))#, queue_size=65536 )#Float32MultiArray, queue_size=2)
         self.debug = rospy.Publisher('debug', String , queue_size=1 )#Float32MultiArray, queue_size=2)
         self.bridge = CvBridge()
         self.fifo_set = np.zeros( (1,15,256,256,1), dtype=float ) #initialize fifo buffer of 20 frames
-        #self.call_count = 20 # start at 20 so we get a weight update first    
         self.model = model # to copy weights
         self.model_inf = model_inf
         self.i = 0 #
         ssim_lst= [.380, .380, .380, .380, .380, .380, .380, .380,.380]
         self.image_subscribe = rospy.Subscriber("/camera/image", Image, self.callback)# ,queue_size = 20
-        #self.old_time = current_ms()
         
         
     def callback(self, data):
@@ -272,24 +268,18 @@ def exec_main_loop(model, model_inf, q, pubS):
 
   
 def evaluate(q):
-    #pub = rospy.Publisher('latent', numpy_msg(Floats), queue_size=1 )#Float32MultiArray, queue_size=2)
     pubS = rospy.Publisher('ssim_old', numpy_msg(Floats), queue_size=1)    
-    #rospy.init_node('SSIM_latent_space')
 
-    #model = get_model(True)
     model, model_inf = get_func_model(True)
     print("got models")
-    #print("\n ################# model.summary")
-    #print(model.summary())
-    #print("\n ################# model_inf.summary")
-    #print(model_inf.summary())
-    #exit()
+
     exec_main_loop(model, model_inf, q, pubS)    
 
     test = get_single_test()
     print(test.shape)
     sz = test.shape[0] - 10 + 1
     sequences = np.zeros((sz, 10, 256, 256, 1))
+    
     # apply the sliding window technique to get the sequences
     for i in range(0, sz):
         clip = np.zeros((10, 256, 256, 1))
@@ -308,11 +298,6 @@ def evaluate(q):
            np.max(sequences_reconstruction_cost) )
     sr = 1.0 - sa
 
-    # plot the regularity scores
-    #plt.plot(sr)
-    #plt.ylabel('regularity score Sr(t)')
-    #plt.xlabel('frame t')
-    #plt.show()
 
 def current_ms():
     return round(time.time() * 1000)
@@ -333,9 +318,7 @@ class image_converter(object):
     q_image = cv2.cvtColor(q_image, cv2.COLOR_BGR2GRAY)
     q_image = np.array(q_image, dtype=np.float32) / 256.0
     self.q.enqueue( np.reshape( q_image, ( 256, 256, 1 ) ) )
-    #print('size',self.q.size())
-    #cv2.imshow("Image window", cv_image)
-    #cv2.waitKey(3)
+
 
 def build_q():
     q_size = 100 #20
@@ -348,8 +331,6 @@ class Config:
     BATCH_SIZE = 1 # 4 was original
     EPOCHS = 1 # change back to 3 (Jack)
     MODEL_PATH = "/home/jack/src/video-anomaly-detection-master/notebooks/lstmautoencoder/model.hdf5"
-  
-
 
     
 def encoder_model(window=10, height=256,width=256):
