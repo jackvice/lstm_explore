@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
 import os
-#os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # no gpu
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0" #2080ti
-
 import tensorflow as tf
 import roslib
-#roslib.load_manifest('my_package')
 import sys
 import rospy
 import cv2
@@ -33,8 +29,6 @@ from os import listdir
 from os.path import isfile, join, isdir
 
 
-
-
 def main(args):  
     rospy.init_node('lstm_AE', anonymous=True)
     q = build_q()
@@ -42,8 +36,6 @@ def main(args):
     evaluate(q)
     cv2.destroyAllWindows()
     q.close()
-
-
 
 
 class inference_obj(object):
@@ -76,20 +68,17 @@ class inference_obj(object):
 
         predicted_frames = self.model_inf.predict( self.fifo_set[ : ,:10, : , : , : ], batch_size = 1 )
         
-        #self.pub_ae_image.publish( predicted_frames[ 0 , 0].flatten() ) # 1st frame from prediction
-        
-        #self.debug.publish(str(current_ms() - old_time) + ' callback total ms, i: ' + str(self.i) )
         self.debug.publish('predicted_frames_type '+str(type(predicted_frames) ))
         self.old_time = current_ms()
         
-        #sin_val = 3.5 # where to put the sine curve to deminish reward after learned         
         struct_similiar = np.array([ssim( np.reshape(self.fifo_set[0,14], (256, 256) ), #use the 5th
                                           np.reshape(predicted_frames[0,4], (256,256) ),
                                           data_range=1 )])
-        #struct_similiar = np.array([0.9])
+
         self.pub_ssim.publish(struct_similiar.astype(dtype=np.float32))
         
-        #if self.i % 3000 == 0:
+        # write out image for debug purpose
+        """
         if self.i % 300 == 0:
             trueImg = self.fifo_set[0,14] * 256
             trueImg = trueImg.astype(int)
@@ -97,6 +86,7 @@ class inference_obj(object):
             rImg = predicted_frames[0,4] * 256
             rImg = rImg.astype(int)
             cv2.imwrite("outImages/inferenceRecon"+ str(self.i) +".png", rImg )
+        """
         self.i += 1
 
 
@@ -195,17 +185,14 @@ def exec_main_loop(model, model_inf, q, pubS):
                       batch_size=Config.BATCH_SIZE,
                       epochs=Config.EPOCHS, shuffle=False, verbose=0)
       now_set = q.dequeue_many(Config.BATCH_SIZE * window)
-      #print(current_ms() - old_time, 'ms per')
+
       old_time = current_ms()
       now_set = np.reshape(now_set,(-1,window,256,256,1))
-      #print('now shape',now_set.shape)
-      #exit()
 
       gen_frames = model.predict( now_set, batch_size=1 )
 
       if False: # i % 100 == 0:
-        #print('now.shape',tf.shape(now_set))
-        #print('gen_frames.shape',tf.shape(gen_frames))
+
         tImg = now_set[0,4] * 256
         tImg = tImg.astype(int)
         rImg = gen_frames[0,4] * 256
@@ -220,9 +207,6 @@ def exec_main_loop(model, model_inf, q, pubS):
       struct_similiar = np.array([ssim( np.reshape(now_set[0,9], (256, 256) ), #use the 10th frame.
                               np.reshape(gen_frames[0,9], (256,256) ),
                               data_range=1 )])
-      #if struct_similiar[0] > 0.25 and dot25 == True:
-      #    model.save_weights('ssimDot25Model')
-      #    dot25=False
       
       if struct_similiar[0] > 0.3 and saveDot3: 
           model.save_weights('models/dot3Model')  # save good model
@@ -395,8 +379,6 @@ def generator_from_queue_test(q, batch_size, gLoop):
       g1 = tf.random.Generator.from_seed(1)
       y_train = [g1.normal(shape=[1,10,256,256,1]).astype(np.float32), g1.normal(shape=[1,10,32,32, 32]).astype(np.float32)]
       yield (X, y_train)
-
-
 
 
 def get_func_model(reload_model=True):  # this is predict next 10
