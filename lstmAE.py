@@ -1,5 +1,10 @@
 #!/usr/bin/env python
+"""\
+This script runs the ros node for Convolutional LSTM based exploration
 
+Gazebo simulation with ROS should be running first.
+Usage: python lstmAE.py
+"""
 import os
 import tensorflow as tf
 import roslib
