@@ -38,7 +38,7 @@ def main(args):
     rospy.init_node('lstm_AE', anonymous=True)
     q = build_q()
     ic = image_converter(q) #pass tf q
-    evaluate(q)
+    evaluate(q) # sets up publisher and ConvLSTM model and then calls main loop
     cv2.destroyAllWindows()
     q.close()
 
@@ -105,6 +105,8 @@ def inference_thread_f(model, model_inf):
     
 def exec_main_loop(model, model_inf, q, pubS):
 
+    # the saveDot vars are for saving the model when we reach a specifc SSIM accuracy.
+    # for example saveDot3 = True would save the model when SSIM = 0.3
     saveDot3 = False #
     saveDot5 = False
     saveDot7 = False # True
@@ -112,32 +114,26 @@ def exec_main_loop(model, model_inf, q, pubS):
     saveBest = False #True
     toLearn = False
 
-    """
-    saveDot3 = True # False #
-    saveDot5 = True
-    saveDot7 = True # True
-    saveDot9 = True
-    saveBest = True
-    toLearn = True  
-    """    
     
     best_ssim = 0
     
     dot25 = True
     window = 10
     initial_train = 10 #300 #5000 #100 #2000
-    
+
+    # start a seperate async thread to run the inference only ConvLSTM model 
     inference_thread = threading.Thread(target=inference_thread_f, args=(model, model_inf,))
     inference_thread.start()
 
-    vid_gen = lambda: generator_from_queue(q,Config.BATCH_SIZE, initial_train)
-    vid_dataset = tf.data.Dataset.from_generator(
+    vid_gen = lambda: generator_from_queue(q,Config.BATCH_SIZE, initial_train) 
+    vid_dataset = tf.data.Dataset.from_generator(  # use a Tensorflow generator for feeding data from a FIFO buffer to the neural network
         vid_gen,
         (tf.float32, (tf.float32,tf.float32) ) )#,
     
     X = y = q.dequeue_many( 3 * 10 )
     print('dequed')
 
+    # initialize the model with some video data
     model.fit(vid_dataset,
                 batch_size=Config.BATCH_SIZE,
                 epochs=Config.EPOCHS,
@@ -196,19 +192,17 @@ def exec_main_loop(model, model_inf, q, pubS):
 
       gen_frames = model.predict( now_set, batch_size=1 )
 
-      if False: # i % 100 == 0:
-
+      if False: # i % 100 == 0:  #this can be used to write out ground truth and reconstructed images at some interval
         tImg = now_set[0,4] * 256
         tImg = tImg.astype(int)
         rImg = gen_frames[0,4] * 256
         rImg = rImg.astype(int)
-
         cv2.imwrite("outImages/generated.png", rImg )
         cv2.imwrite("outImages/actual.png", tImg )
         tImg = np.reshape(tImg,(256,256))
         rImg = np.reshape(rImg,(256,256))
         reconFile.flush()
-        #exit()
+        
       struct_similiar = np.array([ssim( np.reshape(now_set[0,9], (256, 256) ), #use the 10th frame.
                               np.reshape(gen_frames[0,9], (256,256) ),
                               data_range=1 )])
