@@ -20,7 +20,7 @@ dynamic anomalies.
 ![image](https://user-images.githubusercontent.com/4203994/195624929-d562f43e-faee-4cef-8f34-11f428c8f094.png)
 
 ## Getting Started
-In addition to the requirements.txt, this experiment requires ROS(Kinetic) and Gazebo installation.  This configuration was tested on Ubuntu 20.04 with two Nvidia GPU's and CUDA 11.2.  The ROS_files directory contains the Gazebo map as well as Turtlebot configuration files.  lstmAE.py is the primary convolutional LSTM exploration method with vae.py being the variational autoencoder method for comparison.
+In addition to the requirements.txt, this experiment requires ROS(Noetic) and Gazebo installation.  This configuration was tested on Ubuntu 20.04 with two Nvidia GPU's and CUDA 11.2.  The ROS_files directory contains the Gazebo map as well as Turtlebot configuration files.  lstmAE.py is the primary convolutional LSTM exploration method with vae.py being the variational autoencoder method for comparison.
 
 ### Install ROS Noetic with Gazebo
 https://wiki.ros.org/noetic/Installation/Ubuntu
@@ -28,4 +28,13 @@ https://wiki.ros.org/noetic/Installation/Ubuntu
 ### Install dependencies
 `$ pip install -r requirements.txt`
 
+### ROS commands
+```
+roslaunch turtlebot3_gazebo turtlebot3_curiosity.launch
+roslaunch turtlebot3_slam turtlebot3_slam.launch
+roslaunch turtlebot3_navigation move_base.launch
+roslaunch explore_lite explore.launch
+```
 
+### Then run python script
+`python3 lstmAE.py`
